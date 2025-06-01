@@ -1,0 +1,113 @@
+'use client';
+
+import { useRef, useState } from 'react';
+import { Mic } from '@/components/svgs/mic';
+import { LanguageSelector } from '@/components/languageSelector';
+import { useAlert } from '@/contexts/alerContext';
+import { useDocumentContext } from '@/contexts/documentsContext';
+
+const defaultIsoCode = 'nl';
+
+type Props = {
+  access_token: string;
+};
+
+export function Recorder({ access_token }: Props) {
+  const [selectedIsoCode, setSelectedIsoCode] = useState(defaultIsoCode);
+  const [isRecording, setIsRecording] = useState(false);
+  const { setShow, setTitle, setMessage } = useAlert();
+  const { documentId } = useDocumentContext();
+
+  const triggerAlert = () => {
+    setTitle('No document selected');
+    setMessage(
+      'A document must be selected before you can start recording a transcript',
+    );
+    setShow(true);
+  };
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const uploadChunk = async (blob: Blob) => {
+    try {
+      const formData = new FormData();
+      formData.append(
+        'audio',
+        new File([blob], 'chunk.webm', { type: 'audio/webm' }),
+      );
+      formData.append('document_id', documentId!);
+      formData.append('iso_code', selectedIsoCode);
+      formData.append('access_token', access_token);
+
+      const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+      if (typeof webhookUrl === 'undefined' || webhookUrl === '') {
+        throw Error('NEXT_PUBLIC_N8N_WEBHOOK_URL is undefinec');
+      }
+
+      await fetch(webhookUrl, { method: 'POST', body: formData });
+    } catch (err) {
+      console.error('Unable to upload chunk:', err);
+    }
+  };
+
+  const startRecording = async () => {
+    if (documentId === null) {
+      triggerAlert();
+
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus',
+      });
+      mediaRecorder.ondataavailable = async (event: BlobEvent) => {
+        if (event.data.size > 0) {
+          await uploadChunk(event.data);
+        }
+      };
+
+      mediaRecorder.start(3000);
+      setIsRecording(true);
+      mediaRecorderRef.current = mediaRecorder;
+    } catch (err) {
+      console.error('No access to microfoon:', err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+
+    streamRef.current?.getTracks().forEach(track => track.stop());
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    setIsRecording(false);
+  };
+
+  return (
+    <>
+      <LanguageSelector
+        defaultIsoCode={defaultIsoCode}
+        setIsoCode={setSelectedIsoCode}
+      />
+      <div className="flex items-center transition">
+        <h1>Start recording</h1>
+        <button
+          className="w-[30px] h-[30px] p-[5px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 rounded-full cursor-pointer ml-2"
+          onClick={isRecording ? stopRecording : startRecording}>
+          <Mic />
+        </button>
+      </div>
+    </>
+  );
+}
