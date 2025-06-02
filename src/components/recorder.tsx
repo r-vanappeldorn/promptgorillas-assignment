@@ -66,13 +66,24 @@ export function Recorder({ access_token }: Props) {
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus',
       });
+
       mediaRecorder.ondataavailable = async (event: BlobEvent) => {
         if (event.data.size > 0) {
           await uploadChunk(event.data);
+        } else {
+          console.log('chunk skipped');
         }
       };
 
-      mediaRecorder.start(3000);
+      mediaRecorder.start();
+
+      setTimeout(() => {
+        intervalRef.current = setInterval(() => {
+          if (mediaRecorder.state === 'recording') {
+            mediaRecorder.requestData();
+          }
+        }, 3000);
+      }, 3000);
       setIsRecording(true);
       mediaRecorderRef.current = mediaRecorder;
     } catch (err) {
