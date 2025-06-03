@@ -1,5 +1,6 @@
-import { Dispatch } from 'react';
-import { useState, useRef, useEffect } from 'react';
+'use client';
+
+import { Dispatch, useState, useRef, useEffect } from 'react';
 
 type Props = {
   setIsoCode: Dispatch<string>;
@@ -44,19 +45,44 @@ export default function LanguageSelector({
   setIsoCode,
   selectedIsoCode,
 }: Props) {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState(false);
   const listboxRef = useRef<HTMLUListElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const selectedPerson = people.find(p => p.isoCode === selectedIsoCode)!;
 
-  const toggleDropdown = () => {
-    setIsOpen(prev => !prev);
-  };
+  const toggleDropdown = () => setIsOpen(prev => !prev);
 
   const handleSelect = (isoCode: string) => {
     setIsoCode(isoCode);
     setIsOpen(false);
   };
+
+  // Close on Escape or click outside
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && listboxRef.current) {
@@ -68,7 +94,7 @@ export default function LanguageSelector({
   }, [isOpen, selectedIsoCode]);
 
   return (
-    <div className="w-100">
+    <div className="w-100" ref={containerRef}>
       <label className="block text-sm font-medium text-gray-700 mb-1">
         Language
       </label>
@@ -112,7 +138,9 @@ export default function LanguageSelector({
                   className="h-6 w-6 rounded-full"
                 />
                 <span
-                  className={`block truncate ${person.isoCode === selectedIsoCode ? 'font-semibold' : 'font-normal'}`}>
+                  className={`block truncate ${
+                    person.isoCode === selectedIsoCode ? 'font-semibold' : 'font-normal'
+                  }`}>
                   {person.name}
                 </span>
                 {person.isoCode === selectedIsoCode && (
