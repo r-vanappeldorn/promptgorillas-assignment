@@ -2,7 +2,9 @@ import { patchChunkWithHeader, saveWebmHeaderChunk } from '@/utils/chunks';
 import { NextRequest, NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { createReadStream } from 'fs';
+import fs, { createReadStream } from 'fs';
+import path from 'path';
+import { tmpdir } from 'os';
 
 const execAsync = promisify(exec);
 
@@ -13,11 +15,20 @@ export async function POST(req: NextRequest) {
 
   const blobBuffer = Buffer.from(await file.arrayBuffer());
 
-  console.log(formData.get('is_first_chunk') === 'true');
   if (formData.get('is_first_chunk') === 'true') {
     saveWebmHeaderChunk(blobBuffer, sessionId);
 
-    return NextResponse.json({ status: 'header_saved' });
+    const headerFilePath = path.join(tmpdir(), `patched-${Date.now()}-${sessionId}.webm`);
+    fs.writeFileSync(headerFilePath, blobBuffer);
+
+    const stream = createReadStream(headerFilePath);
+    return new NextResponse(stream as any, {
+      status: 200,
+      headers: {
+        'Content-Type': 'audio/webm',
+        'Content-Disposition': 'inline; filename="fixed.webm"',
+      },
+    });
   }
 
   const patchedPath = patchChunkWithHeader(blobBuffer, sessionId);

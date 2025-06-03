@@ -27,9 +27,7 @@ export default function DocumentList({ access_token }: Props) {
       const q = encodeURIComponent(
         "mimeType='application/vnd.google-apps.document'",
       );
-      const docsUrl = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=20`;
-
-      console.log(access_token);
+      const docsUrl = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=10`;
 
       const res = await fetch(docsUrl, {
         headers: {
@@ -56,53 +54,49 @@ export default function DocumentList({ access_token }: Props) {
   }, [access_token]);
 
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Select a document</h1>
+    <section>
       <div
-        className={`transition-opacity duration-700 ${
-          startTransition
-            ? 'opacity-100'
-            : 'opacity-0 pointer-events-none h-0 overflow-hidden'
-        }`}>
-        <div className="flex items-center space-x-2">
+        className={`transition-all min-h-[422px] max-h-[422px] min-w-[500px] w-full duration-500 ease-in-out transform`}>
+        <div
+          className={`flex items-center justify-center space-x-4 text-gray-400 duration-500 ease-in-out transition-all w-100 ${startTransition ? 'h-100' : 'opacity-0 h-0'}`}>
           <LoadingLIcon />
           <span>Loading...</span>
         </div>
-      </div>
-
-      <div
-        className={`transition-opacity duration-700 ${
-          loading
-            ? 'opacity-0 pointer-events-none h-0 overflow-hidden'
-            : 'opacity-100'
-        }`}>
-        {docs.length > 0 ? (
-          <ul className="space-y-4">
-            {docs.map(doc => (
-              <li
-                key={doc.id}
-                className="border p-2 rounded shadow flex justify-between items-center">
-                <Link
-                  href={`https://docs.google.com/document/d/${doc.id}`}
-                  target="_blank"
-                  className="text-blue-600 hover:underline">
-                  {doc.name}
-                </Link>
-                <input
-                  id="default-checkbox"
-                  checked={documentId === doc.id}
-                  type="checkbox"
-                  onChange={() =>
+        <div
+          className={
+            loading ? 'opacity-0 max-h-0 pointer-events-none' : 'opacity-100'
+          }>
+          {docs.length > 0 ? (
+            <div className="border-[1px] border-gray-300 mx-auto w-full rounded-md divide-y divide-gray-200 shadow-xl">
+              {docs.map(doc => (
+                <div
+                  key={doc.id}
+                  onClick={() =>
                     setDocumentId(documentId === doc.id ? null : doc.id)
                   }
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"></input>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No Google Docs found.</p>
-        )}
+                  className={`flex items-center justify-between px-4 py-3 hover:bg-indigo-100 cursor-pointer transition-colors ${documentId === doc.id ? 'bg-indigo-500 hover:bg-indigo-500 text-white' : ''}`}>
+                  <Link
+                    href={`https://docs.google.com/document/d/${doc.id}`}
+                    target="_blank"
+                    className="hover:underline truncate max-w-[80%]">
+                    {doc.name}
+                  </Link>
+                  <input
+                    checked={documentId === doc.id}
+                    type="checkbox"
+                    onChange={() =>
+                      setDocumentId(documentId === doc.id ? null : doc.id)
+                    }
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400">No Google Docs found.</p>
+          )}
+        </div>
       </div>
-    </main>
+    </section>
   );
 }

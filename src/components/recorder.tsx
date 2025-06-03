@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Mic } from '@/components/svgs/mic';
-import { LanguageSelector } from '@/components/languageSelector';
+import LanguageSelector from '@/components/languageSelector';
 import { useAlert } from '@/contexts/alerContext';
 import { useDocumentContext } from '@/contexts/documentsContext';
 
@@ -46,7 +46,7 @@ export function Recorder({ access_token }: Props) {
 
       const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
       if (typeof webhookUrl === 'undefined' || webhookUrl === '') {
-        throw Error('NEXT_PUBLIC_N8N_WEBHOOK_URL is undefinec');
+        throw Error('NEXT_PUBLIC_N8N_WEBHOOK_URL is undefined');
       }
 
       const res = await fetch('/api/transcript', {
@@ -54,17 +54,32 @@ export function Recorder({ access_token }: Props) {
         body: formData,
       });
 
-      if (
-        count.current > 0 &&
-        res.ok &&
-        res.headers.get('Content-Type')?.startsWith('audio/')
-      ) {
-        const url = URL.createObjectURL(await res.blob());
-        console.log(url); // ✅ this should now point to actual audio
-      } else {
-        const result = await res.json();
-        console.log(result); // e.g. { status: 'header_saved' }
+      const contentType = res.headers.get('Content-Type') || '';
+      if (!res.ok || !contentType.startsWith('audio/')) {
+        console.warn(
+          'Invalid response from /api/transcript:',
+          await res.text(),
+        );
+        return;
       }
+
+      const patchedBlob = await res.blob();
+
+      const n8nForm = new FormData();
+      n8nForm.append(
+        'audio',
+        new File([patchedBlob], 'chunk.webm', { type: 'audio/webm' }),
+      );
+      n8nForm.append('document_id', documentId!);
+      n8nForm.append('iso_code', selectedIsoCode);
+      n8nForm.append('access_token', access_token);
+
+      const n8nRes = await fetch(webhookUrl, {
+        method: 'POST',
+        body: n8nForm,
+      });
+
+      console.log(await n8nRes.json());
 
       count.current++;
     } catch (err) {
@@ -87,9 +102,28 @@ export function Recorder({ access_token }: Props) {
         mimeType: 'audio/webm;codecs=opus',
       });
 
-      mediaRecorder.ondataavailable = async (event: BlobEvent) => {
+      let chunkQueue: Blob[] = [];
+      let uploading = false;
+
+      const flushQueue = async () => {
+        if (uploading || chunkQueue.length === 0) return;
+
+        uploading = true;
+
+        while (chunkQueue.length > 0) {
+          const blob = chunkQueue.shift();
+          if (blob) {
+            await uploadChunk(blob);
+          }
+        }
+
+        uploading = false;
+      };
+
+      mediaRecorder.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
-          await uploadChunk(event.data);
+          chunkQueue.push(event.data);
+          flushQueue(); // safely process one-by-one
         } else {
           console.log('chunk skipped');
         }
@@ -127,19 +161,18 @@ export function Recorder({ access_token }: Props) {
   };
 
   return (
-    <>
+    <div>
       <LanguageSelector
-        defaultIsoCode={defaultIsoCode}
+        selectedIsoCode={selectedIsoCode}
         setIsoCode={setSelectedIsoCode}
       />
       <div className="flex items-center transition">
-        <h1>Start recording</h1>
         <button
           className="w-[30px] h-[30px] p-[5px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 rounded-full cursor-pointer ml-2"
           onClick={isRecording ? stopRecording : startRecording}>
           <Mic />
         </button>
       </div>
-    </>
+    </div>
   );
 }
