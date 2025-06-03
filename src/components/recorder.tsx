@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Mic } from '@/components/svgs/mic';
 import LanguageSelector from '@/components/languageSelector';
 import { useAlert } from '@/contexts/alerContext';
@@ -15,10 +15,17 @@ type Props = {
 export function Recorder({ access_token }: Props) {
   const [selectedIsoCode, setSelectedIsoCode] = useState(defaultIsoCode);
   const [isRecording, setIsRecording] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
   let count = useRef(0);
 
   const { setShow, setTitle, setMessage } = useAlert();
   const { documentId } = useDocumentContext();
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const triggerAlert = () => {
     setTitle('No document selected');
@@ -27,10 +34,6 @@ export function Recorder({ access_token }: Props) {
     );
     setShow(true);
   };
-
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
   const uploadChunk = async (blob: Blob) => {
     try {
@@ -45,9 +48,7 @@ export function Recorder({ access_token }: Props) {
       formData.append('is_first_chunk', count.current === 0 ? 'true' : 'false');
 
       const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
-      if (typeof webhookUrl === 'undefined' || webhookUrl === '') {
-        throw Error('NEXT_PUBLIC_N8N_WEBHOOK_URL is undefined');
-      }
+      if (!webhookUrl) throw Error('NEXT_PUBLIC_N8N_WEBHOOK_URL is undefined');
 
       const res = await fetch('/api/transcript', {
         method: 'POST',
@@ -80,7 +81,6 @@ export function Recorder({ access_token }: Props) {
       });
 
       console.log(await n8nRes.json());
-
       count.current++;
     } catch (err) {
       console.error('Unable to upload chunk:', err);
@@ -88,9 +88,8 @@ export function Recorder({ access_token }: Props) {
   };
 
   const startRecording = async () => {
-    if (documentId === null) {
+    if (!documentId) {
       triggerAlert();
-
       return;
     }
 
@@ -107,23 +106,18 @@ export function Recorder({ access_token }: Props) {
 
       const flushQueue = async () => {
         if (uploading || chunkQueue.length === 0) return;
-
         uploading = true;
-
         while (chunkQueue.length > 0) {
           const blob = chunkQueue.shift();
-          if (blob) {
-            await uploadChunk(blob);
-          }
+          if (blob) await uploadChunk(blob);
         }
-
         uploading = false;
       };
 
       mediaRecorder.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
           chunkQueue.push(event.data);
-          flushQueue(); // safely process one-by-one
+          flushQueue();
         } else {
           console.log('chunk skipped');
         }
@@ -138,10 +132,16 @@ export function Recorder({ access_token }: Props) {
           }
         }, 3000);
       }, 3000);
+
+      setElapsedTime(0);
+      timerRef.current = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+
       setIsRecording(true);
       mediaRecorderRef.current = mediaRecorder;
     } catch (err) {
-      console.error('No access to microfoon:', err);
+      console.error('No access to microphone:', err);
     }
   };
 
@@ -152,12 +152,19 @@ export function Recorder({ access_token }: Props) {
 
     streamRef.current?.getTracks().forEach(track => track.stop());
 
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timerRef.current) clearInterval(timerRef.current);
 
     count.current = 0;
     setIsRecording(false);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, '0');
+    const secs = (seconds % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
   };
 
   return (
@@ -166,11 +173,12 @@ export function Recorder({ access_token }: Props) {
         selectedIsoCode={selectedIsoCode}
         setIsoCode={setSelectedIsoCode}
       />
-      <div className="flex items-center transition">
+      <div className="flex flex-col items-center space-y-2 mt-4">
+        <div className="text-5xl text-gray-800">{formatTime(elapsedTime)}</div>
         <button
-          className="w-[30px] h-[30px] p-[5px] flex items-center justify-center bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 rounded-full cursor-pointer ml-2"
+          className={`w-25 h-25 p-[5px] transition-all ease-in-out duration-300 flex items-center justify-center bg-indigo-500 hover:bg-indigo-600 focus:outline-none rounded-full cursor-pointer outline-none ${isRecording ? 'bg-indigo-600 hover:bg-indigo-600 animation-pulse' : ''}`}
           onClick={isRecording ? stopRecording : startRecording}>
-          <Mic />
+          <Mic height={isRecording ? 30 : 50} width={isRecording ? 30 : 50} />
         </button>
       </div>
     </div>

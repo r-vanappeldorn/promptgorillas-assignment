@@ -1,9 +1,15 @@
-export function Mic() {
+type Props = {
+  height: number;
+  width: number;
+}
+
+export function Mic({height, width}: Props) {
   return (
     <svg
+      className="transiton-all ease-in-out duration-300"
       fill="#fff"
-      height="20px"
-      width="20px"
+      height={`${height}px`}
+      width={`${width}px`}
       viewBox="0 0 512 512"
       xmlns="http://www.w3.org/2000/svg">
       <g>
