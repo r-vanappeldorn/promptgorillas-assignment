@@ -1,0 +1,292 @@
+{
+  "name": "Promptgorillas assignment",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ba668210-b072-48de-be0a-8c62d11d4a85",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "=data"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        160,
+        220
+      ],
+      "id": "f33a81fa-82ac-44ed-b688-dd7a5b878cf3",
+      "name": "Webhook",
+      "webhookId": "ba668210-b072-48de-be0a-8c62d11d4a85"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "binaryPropertyName": "data0",
+        "options": {
+          "language": "={{ $json.body.iso_code }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        440,
+        220
+      ],
+      "id": "a367d137-a0d4-4fab-b726-983ddf4cfc42",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "niMNesjrD7d7FRiU",
+          "name": "OpenAi account Promptgorillas"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $('Webhook').item.json.body.document_id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ $json.text }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        640,
+        220
+      ],
+      "id": "fcaea687-c5cc-41e7-b249-5ebda38ba178",
+      "name": "Google Docs",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "AII4VoU5JF0fBRZW",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sentenceRegex = /[^.!?]*[.!?]/g;\n\nlet keywordRegex = /\\b(waarom|dus|hoe|wat|waar|wanneer|wie|probleem|kwestie|bezwaar|zorg|tegenwerpingen)\\b/i;\n\nswitch ($('Webhook').first().json.body.iso_code) {\n  case 'en':\n    keywordRegex = /\\b(why|so|how|what|where|when|who|problem|issue|objection|concern|counterargument)\\b/i;\n    break;\n  case 'de':\n    keywordRegex = /\\b(warum|also|wie|was|wo|wann|wer|problem|frage|einwand|bedenken|gegenargument)\\b/i;\n    break;\n}\n\n$input.first().json.content\n/**\n * @type any[]\n */\nlet requests = [];\nlet match;\n\nwhile ((match = sentenceRegex.exec($input.first().json.content)) !== null) {\n    const sentence = match[0];\n    if (keywordRegex.test(sentence)) {\n      const startIndex = match.index;\n      const endIndex = startIndex + sentence.length;\n\n      requests.push({\n        updateTextStyle: {\n          range: { startIndex, endIndex },\n          textStyle: {\n            backgroundColor: {\n              color: {\n                rgbColor: {\n                  red: 1,\n                  green: 1,\n                  blue: 0.6, \n                },\n              },\n            },\n          },\n          fields: 'backgroundColor',\n        },\n      });\n    };\n};\n\nreturn [{ json: { requests } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        220
+      ],
+      "id": "8d1b047b-a8f4-42de-bca2-d0603a921ba9",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $('Webhook').item.json.body.document_id }}:batchUpdate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "=httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "requests",
+              "value": "={{ $json.requests }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1460,
+        100
+      ],
+      "id": "ee4c61f7-fbb8-4450-89c9-899144f6c10c",
+      "name": "HTTP Request",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "JcDIf7TvIp5Y4jcS",
+          "name": "Unnamed credential"
+        },
+        "httpBearerAuth": {
+          "id": "icQMClrFKpefyJdx",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "={{ $('Webhook').item.json.body.document_id }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        860,
+        220
+      ],
+      "id": "fc9f34bc-ceb0-4402-b308-8a9f9c8c2d19",
+      "name": "Google Docs2",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "AII4VoU5JF0fBRZW",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7e2cb77f-3db6-4701-b64e-ade5167f9ddb",
+              "leftValue": "={{ $json.requests }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        220
+      ],
+      "id": "575c43c6-406e-4163-923a-9bae143807ba",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"Transcript\": \"{{ $('OpenAI').item.json.text }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.3,
+      "position": [
+        1600,
+        220
+      ],
+      "id": "63dd5fe2-4479-4d17-b005-423bfd0720ee",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Google Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Docs": {
+      "main": [
+        [
+          {
+            "node": "Google Docs2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Docs2": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8e4618f9-b27b-444d-91fe-94d631850aa2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1cf2f0c07cf64e948e6e58dbad0f1f285f399ce6d423b6732bf73c253f1a5a40"
+  },
+  "id": "3jZewDVJLSSQuslq",
+  "tags": []
+}
