@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## 🚀 Getting Started
 
-## Getting Started
+This project requires [FFmpeg](https://ffmpeg.org/) and [n8n](https://n8n.io/) to be installed and properly configured in your development environment.
 
-First, run the development server:
+---
+
+### 🔧 Install FFmpeg
+
+#### Ubuntu / Debian
+
+```bash
+sudo apt update
+sudo apt install ffmpeg
+```
+
+#### macOS (using Homebrew)
+
+If you don’t have Homebrew installed:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Then install FFmpeg:
+
+```bash
+brew install ffmpeg
+```
+
+#### Windows
+
+**Option 1 (Recommended - Chocolatey):**
+
+```bash
+choco install ffmpeg
+```
+
+**Option 2 (Manual Installation):**
+
+- Download the latest version from: [https://www.gyan.dev/ffmpeg/builds/](https://www.gyan.dev/ffmpeg/builds/)
+- Extract the archive
+- Add the `bin` directory to your system's `PATH`
+
+---
+
+### 🛠 Install n8n (Workflow Automation Tool)
+
+#### Option 1: Install via npm (macOS / Linux / Windows with Node.js)
+
+```bash
+npm install -g n8n
+```
+
+Start n8n:
+
+```bash
+n8n
+```
+
+> ✅ By default, n8n will run at [http://localhost:5678](http://localhost:5678)
+
+#### Option 2: Run with Docker (alternative, isolated setup)
+
+```bash
+docker run -it --rm \
+  -p 5678:5678 \
+  -v ~/.n8n:/home/node/.n8n \
+  n8nio/n8n
+```
+
+> 💡 You may need to create a `.env` file or pass environment variables for production use. For local testing, the default setup is sufficient.
+
+---
+
+### 📦 Environment Setup
+
+Create a `.env` file in the root of the project with the following variables:
+
+```env
+NEXT_PUBLIC_N8N_WEBHOOK_URL=https://your-n8n-domain.com/webhook/your-webhook-id
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+NEXT_PUBLIC_GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/callback
+NEXT_PUBLIC_BASE_URL=http://localhost:3000/
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+SESSION_PASSWORD=your-random-uuid
+```
+
+> 💡 Replace the placeholder values with your actual credentials. For local development, the provided URLs can be used as-is.
+
+---
+
+### ▶️ Running the Application
+
+1. **Start the Next.js Development Server**
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Start n8n in a Separate Terminal**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+n8n start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Import the Workflow**
 
-## Learn More
+In your local n8n instance:
 
-To learn more about Next.js, take a look at the following resources:
+- Open [http://localhost:5678](http://localhost:5678)
+- Import the `Promptgorillas_assignment.json` file included in this project
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. **Open the App**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open your browser at:
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[http://localhost:3000](http://localhost:3000)
