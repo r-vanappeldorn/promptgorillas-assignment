@@ -12,8 +12,6 @@ import {
 type AlertContextType = {
   show: boolean;
   setShow: Dispatch<SetStateAction<boolean>>;
-  title: string;
-  setTitle: Dispatch<SetStateAction<string>>;
   message: string;
   setMessage: Dispatch<SetStateAction<string>>;
 };
@@ -22,12 +20,11 @@ const AlertContext = createContext<AlertContextType | undefined>(undefined);
 
 export function AlertProvider({ children }: { children: ReactNode }) {
   const [show, setShow] = useState(false);
-  const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
 
   return (
     <AlertContext.Provider
-      value={{ show, setShow, title, setTitle, message, setMessage }}>
+      value={{ show, setShow, message, setMessage }}>
       {children}
     </AlertContext.Provider>
   );

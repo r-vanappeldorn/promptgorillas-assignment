@@ -5,6 +5,8 @@ import { Mic } from '@/components/svgs/mic';
 import LanguageSelector from '@/components/languageSelector';
 import { useAlert } from '@/contexts/alerContext';
 import { useDocumentContext } from '@/contexts/documentsContext';
+import { useTranscriptContext } from '@/contexts/transcriptContext';
+import TranscriptLog from './transcriptLog';
 
 const defaultIsoCode = 'nl';
 
@@ -19,8 +21,9 @@ export function Recorder({ access_token }: Props) {
 
   let count = useRef(0);
 
-  const { setShow, setTitle, setMessage } = useAlert();
+  const { setShow, setMessage } = useAlert();
   const { documentId } = useDocumentContext();
+  const { setTranscript, transcript } = useTranscriptContext();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -28,7 +31,6 @@ export function Recorder({ access_token }: Props) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const triggerAlert = () => {
-    setTitle('No document selected');
     setMessage(
       'A document must be selected before you can start recording a transcript',
     );
@@ -80,7 +82,12 @@ export function Recorder({ access_token }: Props) {
         body: n8nForm,
       });
 
-      console.log(await n8nRes.json());
+      const response = await n8nRes.json();
+
+      if (response.Transcript) {
+        setTranscript(transcript + response.Transcript);
+      }
+
       count.current++;
     } catch (err) {
       console.error('Unable to upload chunk:', err);
@@ -125,12 +132,10 @@ export function Recorder({ access_token }: Props) {
 
       mediaRecorder.start();
 
-      setTimeout(() => {
-        intervalRef.current = setInterval(() => {
-          if (mediaRecorder.state === 'recording') {
-            mediaRecorder.requestData();
-          }
-        }, 3000);
+      intervalRef.current = setInterval(() => {
+        if (mediaRecorder.state === 'recording') {
+          mediaRecorder.requestData();
+        }
       }, 3000);
 
       setElapsedTime(0);
@@ -167,18 +172,25 @@ export function Recorder({ access_token }: Props) {
     return `${mins}:${secs}`;
   };
 
+  useEffect(() => {
+    timerRef.current = null;
+  }, [documentId]);
+
   return (
-    <div>
+    <div className="min-w-[428px]">
+      <TranscriptLog />
       <LanguageSelector
         selectedIsoCode={selectedIsoCode}
         setIsoCode={setSelectedIsoCode}
       />
-      <div className="flex flex-col items-center space-y-2 mt-4">
-        <div className="text-5xl text-gray-800">{formatTime(elapsedTime)}</div>
+      <div className="flex flex-row justify-center items-center space-y-2 mt-4">
+        <div className="text-5xl text-gray-700 mb-0 mr-4">
+          {formatTime(elapsedTime)}
+        </div>
         <button
-          className={`w-25 h-25 p-[5px] transition-all ease-in-out duration-300 flex items-center justify-center bg-indigo-500 hover:bg-indigo-600 focus:outline-none rounded-full cursor-pointer outline-none ${isRecording ? 'bg-indigo-600 hover:bg-indigo-600 animation-pulse' : ''}`}
+          className={`w-15 h-15 p-[5px] transition-all ease-in-out duration-300 flex items-center justify-center bg-indigo-500 hover:bg-indigo-600 focus:outline-none rounded-full cursor-pointer outline-none ${isRecording ? 'bg-indigo-600 hover:bg-indigo-600 animation-pulse' : ''}`}
           onClick={isRecording ? stopRecording : startRecording}>
-          <Mic height={isRecording ? 30 : 50} width={isRecording ? 30 : 50} />
+          <Mic height={isRecording ? 20 : 30} width={isRecording ? 20 : 30} />
         </button>
       </div>
     </div>

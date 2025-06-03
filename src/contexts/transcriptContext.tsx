@@ -6,7 +6,6 @@ import {
   useState,
   ReactNode,
   Dispatch,
-  SetStateAction,
 } from 'react';
 
 type TranscriptContext = {
@@ -27,7 +26,7 @@ function TranscriptProvider({ children }: { children: ReactNode }) {
   );
 }
 
-function useTranscript() {
+function useTranscriptContext() {
   const context = useContext(TranscriptContext);
   if (!context) {
     throw new Error('useAlert must be used within an AlertProvider');
@@ -36,6 +35,6 @@ function useTranscript() {
 }
 
 export {
-  useTranscript, 
+  useTranscriptContext, 
   TranscriptProvider
 };
