@@ -1,18 +1,19 @@
 'use client';
 
-import { AlertProvider } from "./alerContext";
-import { DocumentProvider } from "./documentsContext";
+import { AlertProvider } from './alerContext';
+import { DocumentProvider } from './documentsContext';
+import { TranscriptProvider } from './transcriptContext';
 
 type Props = {
   children: React.ReactNode;
-}
+};
 
-export default function ContextProvider({children}: Props) {
+export default function ContextProvider({ children }: Props) {
   return (
-    <DocumentProvider>
-      <AlertProvider>
-        {children}
-      </AlertProvider>
-    </DocumentProvider>
-  )
+    <TranscriptProvider>
+      <DocumentProvider>
+        <AlertProvider>{children}</AlertProvider>
+      </DocumentProvider>
+    </TranscriptProvider>
+  );
 }
