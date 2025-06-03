@@ -13,7 +13,7 @@ export default function SignedIn({ access_token }: Props) {
   return (
     <ContextProvider>
       <main className="h-dvh w-[100%] px-40 pt-30">
-        <h1 className="text-2xl font-medium text-gray-700 mb-4">
+        <h1 className="text-4xl font-medium text-gray-700 mb-4">
           Select a document
         </h1>
         <div className="flex justify-between flex-row">
