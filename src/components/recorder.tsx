@@ -15,6 +15,8 @@ type Props = {
 export function Recorder({ access_token }: Props) {
   const [selectedIsoCode, setSelectedIsoCode] = useState(defaultIsoCode);
   const [isRecording, setIsRecording] = useState(false);
+  let count = useRef(0);
+
   const { setShow, setTitle, setMessage } = useAlert();
   const { documentId } = useDocumentContext();
 
@@ -40,13 +42,31 @@ export function Recorder({ access_token }: Props) {
       formData.append('document_id', documentId!);
       formData.append('iso_code', selectedIsoCode);
       formData.append('access_token', access_token);
+      formData.append('is_first_chunk', count.current === 0 ? 'true' : 'false');
 
       const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
       if (typeof webhookUrl === 'undefined' || webhookUrl === '') {
         throw Error('NEXT_PUBLIC_N8N_WEBHOOK_URL is undefinec');
       }
 
-      await fetch(webhookUrl, { method: 'POST', body: formData });
+      const res = await fetch('/api/transcript', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (
+        count.current > 0 &&
+        res.ok &&
+        res.headers.get('Content-Type')?.startsWith('audio/')
+      ) {
+        const url = URL.createObjectURL(await res.blob());
+        console.log(url); // ✅ this should now point to actual audio
+      } else {
+        const result = await res.json();
+        console.log(result); // e.g. { status: 'header_saved' }
+      }
+
+      count.current++;
     } catch (err) {
       console.error('Unable to upload chunk:', err);
     }
@@ -102,6 +122,7 @@ export function Recorder({ access_token }: Props) {
       clearInterval(intervalRef.current);
     }
 
+    count.current = 0;
     setIsRecording(false);
   };
 

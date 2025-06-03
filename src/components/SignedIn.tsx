@@ -1,9 +1,9 @@
 'use client';
 
-import DocumentList from './documentList';
-import { Recorder } from './recorder';
-import Alert from './alert';
+import DocumentList from '@/components/documentList';
+import Alert from '@/components/alert';
 import ContextProvider from '@/contexts/contextProvider';
+import { Recorder } from './recorder';
 
 type Props = {
   access_token: string;

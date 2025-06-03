@@ -57,7 +57,7 @@ export default function DocumentList({ access_token }: Props) {
 
   return (
     <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Selecteer een document</h1>
+      <h1 className="text-2xl font-bold mb-4">Select a document</h1>
       <div
         className={`transition-opacity duration-700 ${
           startTransition
