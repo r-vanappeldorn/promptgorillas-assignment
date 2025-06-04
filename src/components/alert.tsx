@@ -14,7 +14,7 @@ export default function Alert() {
   return (
     <div
       role="alert"
-      className={`max-w-150 flex w-full p-3 text-sm text-slate-600 rounded-md bg-slate-100 transition-all ease-in-out duration-700 absolute right-10 ${show ? 'bottom-10' : 'bottom-[-30px]'}`}>
+      className={`max-w-150 flex w-full p-3 text-sm text-slate-600 rounded-md bg-slate-100 transition-all ease-in-out duration-700 absolute right-10 ${show ? 'bottom-10' : 'lg:bottom-[-30px] md:bottom-[-50px]'}`}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"

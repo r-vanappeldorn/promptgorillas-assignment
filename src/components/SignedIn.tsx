@@ -16,7 +16,7 @@ export default function SignedIn({ access_token }: Props) {
         <h1 className="text-xl font-medium text-gray-700 mb-2">
           Select a document
         </h1>
-        <div className="flex justify-between flex-row">
+        <div className="flex justify-between lg:flex-row md:flex-col">
           <DocumentList access_token={access_token} />
           <Recorder access_token={access_token} />
           <Alert />
