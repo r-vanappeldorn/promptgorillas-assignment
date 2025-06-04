@@ -94,14 +94,14 @@ export default function LanguageSelector({
   }, [isOpen, selectedIsoCode]);
 
   return (
-    <div className="w-100" ref={containerRef}>
+    <div className="w-full" ref={containerRef}>
       <label className="block text-sm font-medium text-gray-700 mb-1">
         Language
       </label>
       <div className="relative cursor-pointer">
         <button
           onClick={toggleDropdown}
-          className="w-full flex items-center justify-between border border-gray-300 bg-white rounded-md px-3 py-2 text-left text-sm focus:outline-none">
+          className="w-full flex items-center justify-between border border-gray-300 bg-white rounded cursor-pointer px-3 py-2 text-left text-sm focus:outline-none">
           <div className="flex items-center gap-2">
             <img
               src={selectedPerson.icon}
@@ -121,7 +121,7 @@ export default function LanguageSelector({
         {isOpen && (
           <ul
             ref={listboxRef}
-            className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-sm max-h-60 overflow-auto text-sm">
+            className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded shadow-sm max-h-60 overflow-auto text-sm">
             {people.map(person => (
               <li
                 key={person.isoCode}
