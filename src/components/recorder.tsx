@@ -26,9 +26,12 @@ export function Recorder({ access_token }: Props) {
   const { setTranscript, transcript } = useTranscriptContext();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    count.current = 0;
+  }, [documentId]);
 
   const triggerAlert = () => {
     setMessage(
@@ -44,6 +47,8 @@ export function Recorder({ access_token }: Props) {
         'audio',
         new File([blob], 'chunk.webm', { type: 'audio/webm' }),
       );
+
+      console.log('is_first_chunk', count.current === 0 ? 'true' : 'false');
       formData.append('document_id', documentId!);
       formData.append('iso_code', selectedIsoCode);
       formData.append('access_token', access_token);
@@ -90,11 +95,11 @@ export function Recorder({ access_token }: Props) {
       if (response.Transcript) {
         setTranscript(transcript + response.Transcript);
       }
-
-      count.current++;
     } catch (err) {
       console.error('Unable to upload chunk:', err);
     }
+
+    count.current++;
   };
 
   const startRecording = async () => {
@@ -136,13 +141,7 @@ export function Recorder({ access_token }: Props) {
         }
       };
 
-      mediaRecorder.start();
-
-      intervalRef.current = setInterval(() => {
-        if (mediaRecorder.state === 'recording') {
-          mediaRecorder.requestData();
-        }
-      }, 3000);
+      mediaRecorder.start(3000);
 
       setElapsedTime(0);
       timerRef.current = setInterval(() => {
@@ -163,7 +162,6 @@ export function Recorder({ access_token }: Props) {
 
     streamRef.current?.getTracks().forEach(track => track.stop());
 
-    if (intervalRef.current) clearInterval(intervalRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
 
     count.current = 0;

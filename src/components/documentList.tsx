@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import LoadingLIcon from './svgs/loadingIcon';
 import { useDocumentContext } from '@/contexts/documentsContext';
+import { useAlert } from '@/contexts/alerContext';
 
 type Props = {
   access_token: string;
@@ -21,6 +22,43 @@ export default function DocumentList({ access_token }: Props) {
   const { setDocumentId, documentId, loading, setLoading } =
     useDocumentContext();
   const { baseUrl } = getEnv();
+  const { setShow, setMessage } = useAlert();
+
+  const handleCreateNewDocument = async (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    const documentName = (event.target as HTMLInputElement).value.trim();
+    const body = {
+      name: documentName,
+      mimeType: 'application/vnd.google-apps.document',
+    };
+
+    try {
+      const res = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (data?.id) {
+        setDocs(prev => [{ id: data.id, name: documentName }, ...prev]);
+        setShow(true);
+        setMessage('New document created');
+        (event.target as HTMLInputElement).value = '';
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     async function getGoogleDocs() {
@@ -68,6 +106,15 @@ export default function DocumentList({ access_token }: Props) {
           }>
           {docs.length > 0 ? (
             <div className="border-[1px] border-gray-300 mx-auto w-full rounded divide-y divide-gray-200 shadow-xl">
+              <div
+                className={`flex items-center justify-between px-4 py-3 hover:bg-indigo-100 cursor-pointer transition-colors`}>
+                <input
+                  onKeyDown={event => handleCreateNewDocument(event)}
+                  id="create-doc"
+                  placeholder="create new document"
+                  className=" outline-none border border-gray-300 rounded px-4 py-2 w-full"
+                />
+              </div>
               {docs.map(doc => (
                 <div
                   key={doc.id}
