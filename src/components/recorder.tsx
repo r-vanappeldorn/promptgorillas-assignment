@@ -52,7 +52,10 @@ export function Recorder({ access_token }: Props) {
       const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
       if (!webhookUrl) throw Error('NEXT_PUBLIC_N8N_WEBHOOK_URL is undefined');
 
-      const res = await fetch('/api/transcript', {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!webhookUrl) throw Error('NEXT_PUBLIC_BASE_URL is undefined');
+
+      const res = await fetch(`${baseUrl}api/fix_chunk`, {
         method: 'POST',
         body: formData,
       });
@@ -97,8 +100,11 @@ export function Recorder({ access_token }: Props) {
   const startRecording = async () => {
     if (!documentId) {
       triggerAlert();
+
       return;
     }
+
+    setTranscript('');
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
