@@ -67,7 +67,7 @@ export default function DocumentList({ access_token }: Props) {
             loading ? 'opacity-0 max-h-0 pointer-events-none' : 'opacity-100'
           }>
           {docs.length > 0 ? (
-            <div className="border-[1px] border-gray-300 mx-auto w-full rounded-md divide-y divide-gray-200 shadow-xl">
+            <div className="border-[1px] border-gray-300 mx-auto w-full rounded divide-y divide-gray-200 shadow-xl">
               {docs.map(doc => (
                 <div
                   key={doc.id}
